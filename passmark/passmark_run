@@ -25,53 +25,162 @@ test_name="passmark"
 arguments="$@"
 chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
 run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
+cd $rundir
 
 show_usage=0
 
 #
-# Clone the repo that contains the common code and tools
+# Reduce data
 #
-tools_git=https://github.com/dvalinrh/test_tools
 
-found=0
-for arg in "$@"; do
-	if [ $found -eq 1 ]; then
-		tools_git=$arg
-		found=0
-	fi
-	if [[ $arg == "--tools_git" ]]; then
-		found=1
-	fi
+summary_file="passmark.summary"
+rm $summary_file
+pull_data()
+{
+	passmark_file=`mktemp /tmp/passmark_data.XXXXX`
+	test_name=${1}
+	grep "^${test_name}" results_all_*yml | cut -d':' -f2 | sed "s/ //g" > ${passmark_file}
+	results=0.0
+	iterations=0
+	while IFS= read -r line
+	do
+		let "iterations=$iterations+1"
+		value=`echo $line | awk '{print $4}'`
+		results=`echo "${results}}+${value}"| bc -l`
+	done < "${passmark_file}"
+	rm ${passmark_file}
+	value=`echo "scaling=12;${results}/${iterations}" | bc -l`
+	output=`printf "  %s:%-40.12f" $test_name $value | sed "s/ //g" | sed "s/:/: /g"`
+	echo "${output}"
+}
 
-	#
-	# We do the usage check here, as we do not want to be calling
-	# the common parsers then checking for usage here.  Doing so will
-	# result in the script exiting with out giving the test options.
-	#
-	if [[ $arg == "--usage" ]]; then
-		show_usage=1
-	fi
-done
-
-#
-# Check to see if the test tools directory exists.  If it does, we do not need to
-# clone the repo.
-#
-if [ ! -d "test_tools" ]; then
-        git clone $tools_git
-        if [ $? -ne 0 ]; then
-                echo pulling git $tools_git failed.
-                exit
-        fi
-fi
-
-if [ $show_usage -eq 1 ]; then
+usage()
+{
 	echo "$1 Usage:"
 	echo "  --cpu_add n: add n cpus each iteration until hit max cpus"
 	echo "  --powers_2: starting from 1 cpu, keep doubling the cpus until max cpus"
 	source test_tools/general_setup --usage
 	exit 0
-fi
+}
+
+produce_report()
+{
+	found=0
+	while IFS= read -r line
+	do
+		if [[ $found -eq 1 ]]; then
+			if [[ ${line} != "SystemInformation:"* ]]; then
+				test_name=`echo $line | awk '{print $1}'`
+				pull_data $test_name
+				continue
+			else
+				found=0
+			fi
+		fi
+		if [[ $line == "NumTestProcesses:"* ]]; then
+			found=1
+		fi
+		echo "${line}" >> $summary_file
+	done < "results_all_1.yml"
+	echo Checksum: Not applicable for summary file >> $summary_file
+}
+
+install_tools()
+{
+	#
+	# Clone the repo that contains the common code and tools
+	#
+	tools_git=https://github.com/dvalinrh/test_tools
+
+	found=0
+	for arg in "$@"; do
+		if [ $found -eq 1 ]; then
+			tools_git=$arg
+			found=0
+		fi
+		if [[ $arg == "--tools_git" ]]; then
+			found=1
+		fi
+	
+		#
+		# We do the usage check here, as we do not want to be calling
+		# the common parsers then checking for usage here.  Doing so will
+		# result in the script exiting with out giving the test options.
+		#
+		if [[ $arg == "--usage" ]]; then
+			show_usage=1
+		fi
+	done
+	
+	#
+	# Check to see if the test tools directory exists.  If it does, we do not need to
+	# clone the repo.
+	#
+	if [ ! -d "test_tools" ]; then
+		git clone $tools_git
+		if [ $? -ne 0 ]; then
+			echo pulling git $tools_git failed.
+			exit
+		fi
+	fi
+
+	if [ $show_usage -eq 1 ]; then
+		usage $1
+	fi
+}
+
+move_data_to_export()
+{
+	rm -rf /tmp/results_${test_name}_*
+	RESULTSDIR=/tmp/results_${test_name}_${to_tuned_setting}_$(date "+%Y.%m.%d-%H.%M.%S")
+	mkdir $RESULTSDIR
+	cp passmark.summary $RESULTSDIR
+	cp results_all_* $RESULTSDIR
+	mv  ${test_name}_${iter}.out ${RESULTSDIR}
+	pushd /tmp > /dev/null
+	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
+	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
+}
+
+run_passmark()
+{
+	cd /${to_home_root}/${to_user}
+	if [ ! -d "PerformanceTest" ]; then
+		unzip pt_linux_*.zip
+	fi
+
+	if [ ! -f "/usr/lib64/libncurses.so.5" ]; then
+		pushd /usr/lib64 > /dev/null
+		ln -s libncurses.so.6 libncurses.so.5
+		popd > /dev/null
+	fi
+
+	pushd PerformanceTest > /dev/null
+
+	#
+	# Iteration of test.
+	#
+
+	if [ $to_pbench -eq 0 ]; then
+		rm ${test_name}_*out
+		rm passmark.summary
+		for iter in $(seq 1 1 $to_times_to_run); do
+			./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
+			mv results_all.yml results_all_${iter}.yml
+		done
+		produce_report
+		move_data_to_export
+		cp  results_${test_name}_${to_tuned_setting}.tar results_pbench_${test_name}_${to_tuned_setting}.tar
+		popd > /dev/null
+	else
+		source ~/.bashrc
+		echo $TOOLS_BIN/execute_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11
+		echo $TOOLS_BIN/execute_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 > /tmp/foo
+		$TOOLS_BIN/execute_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11
+	fi
+}
+
+install_tools
 
 #
 # Variables set by general setup.
@@ -93,12 +202,12 @@ fi
 source test_tools/general_setup "$@"
 
 ARGUMENT_LIST=(
-        "cpu_add"
+	"cpu_add"
 )
 
 NO_ARGUMENTS=(
 	"powers_2"
-        "usage"
+ 	"usage"
 )
 
 # read arguments
@@ -130,41 +239,4 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
-cd /${to_home_root}/${to_user}
-if [ ! -d "PerformanceTest" ]; then
-	unzip pt_linux_*.zip
-fi
-
-if [ ! -f "/usr/lib64/libncurses.so.5" ]; then
-	pushd /usr/lib64 > /dev/null
-	ln -s libncurses.so.6 libncurses.so.5
-	popd > /dev/null
-fi
-
-pushd PerformanceTest > /dev/null
-
-#
-# Iteration of test.
-#
-
-if [ $to_pbench -eq 0 ]; then
-	for iter in $(seq 1 1 $to_times_to_run); do
-		./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
-		mv results_all.yml results_all_${iter}.yml
-	done
-	rm -rf /tmp/results_${test_name}_*
-	RESULTSDIR=/tmp/results_${test_name}_${to_tuned_setting}_$(date "+%Y.%m.%d-%H.%M.%S")
-	mkdir $RESULTSDIR
-	cp results_all_* $RESULTSDIR
-	mv  ${test_name}_${iter}.out ${RESULTSDIR}
-	pushd /tmp > /dev/null
-	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
-	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
-	cp  results_${test_name}_${to_tuned_setting}.tar results_pbench_${test_name}_${to_tuned_setting}.tar
-	popd > /dev/null
-else
-	source ~/.bashrc
-	echo $TOOLS_BIN/execute_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11
-	echo $TOOLS_BIN/execute_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 > /tmp/foo
-	$TOOLS_BIN/execute_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11
-fi
+run_passmark
