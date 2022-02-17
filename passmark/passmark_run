@@ -240,3 +240,4 @@ while [[ $# -gt 0 ]]; do
 done
 
 run_passmark
+exit 0
