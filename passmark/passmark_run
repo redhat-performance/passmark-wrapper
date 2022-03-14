@@ -165,7 +165,11 @@ run_passmark()
 		rm ${test_name}_*out
 		rm passmark.summary
 		for iter in $(seq 1 1 $to_times_to_run); do
-			./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
+			if [ -f "pt_linux_x64" ]; then
+				./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
+			else
+				./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
+			fi
 			mv results_all.yml results_all_${iter}.yml
 		done
 		produce_report
