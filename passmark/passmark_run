@@ -26,6 +26,7 @@ arguments="$@"
 chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
 run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
 cd $rundir
+arch=`uname -m`
 
 show_usage=0
 
@@ -146,7 +147,11 @@ run_passmark()
 {
 	cd /${to_home_root}/${to_user}
 	if [ ! -d "PerformanceTest" ]; then
-		unzip pt_linux_*.zip
+		if [[ $arch == "aarch64" ]]; then
+			unzip pt_linux_arm64.zip
+		else
+			unzip pt_linux_x64.zip
+		fi
 	fi
 
 	if [ ! -f "/usr/lib64/libncurses.so.5" ]; then
@@ -165,10 +170,10 @@ run_passmark()
 		rm ${test_name}_*out
 		rm passmark.summary
 		for iter in $(seq 1 1 $to_times_to_run); do
-			if [ -f "pt_linux_x64" ]; then
-				./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
-			else
+			if [[ $arch == "aarch64" ]]; then
 				./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
+			else
+				./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
 			fi
 			mv results_all.yml results_all_${iter}.yml
 		done
