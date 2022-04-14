@@ -189,7 +189,7 @@ run_passmark()
 	fi
 }
 
-install_tools
+install_tools "$@"
 
 #
 # Variables set by general setup.
