@@ -24,13 +24,13 @@
 test_name="passmark"
 arguments="$@"
 
+curdir=`pwd`
 if [[ $0 == "./"* ]]; then
 	chars=`echo $0 | awk -v RS='/' 'END{print NR-1}'`
 	if [[ $chars == 1 ]]; then
 		run_dir=`pwd`
 	else
 		run_dir=`echo $0 | cut -d'/' -f 1-${chars} | cut -d'.' -f2-`
-		curdir=`pwd`
 		run_dir="${curdir}${run_dir}"
 	fi
 else
@@ -148,6 +148,7 @@ move_data_to_export()
 	rm -rf /tmp/results_${test_name}_*
 	RESULTSDIR=/tmp/results_${test_name}_${to_tuned_setting}_$(date "+%Y.%m.%d-%H.%M.%S")
 	mkdir $RESULTSDIR
+	cp ${curdir}/meta_data.yml $RESULTSDIR
 	cp passmark.summary $RESULTSDIR
 	cp results_all_* $RESULTSDIR
 	mv  ${test_name}_${iter}.out ${RESULTSDIR}
@@ -196,6 +197,7 @@ run_passmark()
 		popd > /dev/null
 	else
 		source ~/.bashrc
+		cd $curdir
 		echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
 		$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
 	fi
