@@ -172,6 +172,8 @@ move_data_to_export()
 	mv  ${test_name}_${iter}.out ${RESULTSDIR}
 	pushd /tmp > /dev/null
 	ln -s ${RESULTSDIR} results_${test_name}_${to_tuned_setting}
+	rm -f results_pbench.tar
+	find -L $results_dir  -type f | tar --transform 's/.*\///g' -cf results_pbench.tar --files-from=/dev/stdin
 	tar hcf results_${test_name}_${to_tuned_setting}.tar results_${test_name}_${to_tuned_setting}
 }
 
