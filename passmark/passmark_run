@@ -111,6 +111,22 @@ produce_report()
 			echo "${line}" >> $summary_file
 		done < "results_all_1.yml"
 		echo Ran > test_results_report
+
+		located=0
+		while IFS= read -r line
+		do
+			if [[ $line == *"Results Complete:"* ]]; then
+				located=1
+				continue
+			fi
+			if [ $located -eq 0 ]; then
+				continue
+			fi
+			if [[ $line == *"SystemInformation:"* ]]; then
+				break;
+			fi
+			echo $line | sed "s/ //g" >> results.csv
+		done < "$summary_file"
 	fi
 	echo Checksum: Not applicable for summary file >> $summary_file
 }
@@ -168,6 +184,7 @@ move_data_to_export()
 	mv test_results_report $RESULTSDIR
 	cp ${curdir}/meta_data.yml $RESULTSDIR
 	cp passmark.summary $RESULTSDIR
+	cp results.csv $RESULTSDIR
 	cp results_all_* $RESULTSDIR
 	mv  ${test_name}_${iter}.out ${RESULTSDIR}
 	pushd /tmp > /dev/null
