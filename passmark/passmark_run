@@ -197,7 +197,11 @@ move_data_to_export()
 
 run_passmark()
 {
-	pushd /mnt > /dev/null
+	if [[ -d "/mnt/uploads" ]]; then
+		pushd /mnt > /dev/null
+	else
+		pushd . > /dev/null
+	fi
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
 			uploads/unzip pt_linux_arm64.zip
