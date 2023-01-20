@@ -197,16 +197,22 @@ move_data_to_export()
 
 run_passmark()
 {
+	#
+	# Go to where uploads is located.
+	#
 	if [[ -d "/mnt/uploads" ]]; then
 		pushd /mnt > /dev/null
 	else
+		#
+		# Else assume in current directory.
+		#
 		pushd . > /dev/null
 	fi
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
-			uploads/unzip pt_linux_arm64.zip
+			unzip uploads/pt_linux_arm64.zip
 		else
-			uploads/unzip pt_linux_x64.zip
+			unzip uploads/pt_linux_x64.zip
 		fi
 	fi
 
