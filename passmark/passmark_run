@@ -197,12 +197,12 @@ move_data_to_export()
 
 run_passmark()
 {
-	cd /${to_home_root}/${to_user}
+	pushd /mnt > /dev/null
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
-			unzip pt_linux_arm64.zip
+			uploads/unzip pt_linux_arm64.zip
 		else
-			unzip pt_linux_x64.zip
+			uploads/unzip pt_linux_x64.zip
 		fi
 	fi
 
@@ -239,6 +239,7 @@ run_passmark()
 		echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
 		$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
 	fi
+	popd > /dev/null
 }
 
 install_tools "$@"
