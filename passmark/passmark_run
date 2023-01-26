@@ -48,7 +48,7 @@ else
 	run_dir=`echo $0 | cut -d'/' -f 1-${chars}`
 fi
 
-cd $rundir
+cd $run_dir
 arch=`uname -m`
 
 show_usage=0
@@ -197,17 +197,7 @@ move_data_to_export()
 
 run_passmark()
 {
-	#
-	# Go to where uploads is located.
-	#
-	if [[ -d "${to_home_root}/uploads" ]]; then
-		pushd $to_home_root > /dev/null
-	else
-		#
-		# Else assume in current directory.
-		#
-		pushd . > /dev/null
-	fi
+	pushd $curdir > /dev/null
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
 			unzip uploads/pt_linux_arm64.zip
@@ -249,7 +239,6 @@ run_passmark()
 		echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
 		$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
 	fi
-	popd > /dev/null
 }
 
 install_tools "$@"
