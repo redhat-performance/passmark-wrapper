@@ -200,8 +200,8 @@ run_passmark()
 	#
 	# Go to where uploads is located.
 	#
-	if [[ -d "/mnt/uploads" ]]; then
-		pushd /mnt > /dev/null
+	if [[ -d "${to_home_root}/uploads" ]]; then
+		pushd $to_home_root > /dev/null
 	else
 		#
 		# Else assume in current directory.
