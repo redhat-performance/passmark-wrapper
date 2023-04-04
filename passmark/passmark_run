@@ -201,6 +201,17 @@ run_passmark()
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
 			unzip uploads/pt_linux_arm64.zip
+			#
+			# Ubuntu check
+			#
+			uname -a | grep  -q Ubuntu
+			if [ $? -eq 0 ]; then
+				echo ubuntu >> /tmp/dave
+				if [[ ! -f /usr/lib64 ]]; then
+					ln -s /usr/lib /usr/lib64
+					echo ln -s /usr/lib /usr/lib64 >> /tmp/dave
+				fi
+			fi
 		else
 			unzip uploads/pt_linux_x64.zip
 		fi
