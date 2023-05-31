@@ -27,9 +27,12 @@ if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
         echo $command
         $command &> /tmp/${test_name}.out
-        cat /tmp/${test_name}.out
-        rm /tmp/${test_name}.out
-        exit
+	rtc=$?
+	if [[ -f /tmp/${test_name}.out ]]; then
+        	cat /tmp/${test_name}.out
+        	rm /tmp/${test_name}.out
+	fi
+        exit $rtc
 fi
 
 arguments="$@"
@@ -53,6 +56,11 @@ arch=`uname -m`
 
 show_usage=0
 
+exit_out()
+{
+	echo $1
+	exit $2
+}
 #
 # Reduce data
 #
@@ -84,7 +92,7 @@ usage()
 	echo "  --cpu_add n: add n cpus each iteration until hit max cpus"
 	echo "  --powers_2: starting from 1 cpu, keep doubling the cpus until max cpus"
 	source test_tools/general_setup --usage
-	exit 0
+	exit 1
 }
 
 produce_report()
@@ -165,8 +173,7 @@ install_tools()
 	if [ ! -d "test_tools" ]; then
 		git clone $tools_git test_tools
 		if [ $? -ne 0 ]; then
-			echo pulling git $tools_git failed.
-			exit
+			exit_out "pulling git $tools_git failed." 1
 		fi
 	fi
 
@@ -201,6 +208,9 @@ run_passmark()
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
 			unzip uploads/pt_linux_arm64.zip
+			if [ $? -ne 0 ]; then
+				exit_out "pt_linux_arm64.zip failed" 1
+			fi
 			#
 			# Ubuntu check
 			#
@@ -214,6 +224,9 @@ run_passmark()
 			fi
 		else
 			unzip uploads/pt_linux_x64.zip
+			if [ $? -ne 0 ]; then
+				exit_out "pt_linux_x64.zip failed" 1
+			fi
 		fi
 	fi
 
@@ -235,8 +248,14 @@ run_passmark()
 		for iter in $(seq 1 1 $to_times_to_run); do
 			if [[ $arch == "aarch64" ]]; then
 				./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
+				if [ $? -ne 0 ]; then
+					exit_out "Execution of ./pt_linux_arm64 failed" 1
+				fi
 			else
 				./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
+				if [ $? -ne 0 ]; then
+					exit_out "Execution of ./pt_linux_x64 failed" 1
+				fi
 			fi
 			mv results_all.yml results_all_${iter}.yml
 		done
