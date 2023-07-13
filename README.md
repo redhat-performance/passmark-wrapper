@@ -3,8 +3,8 @@ Automation wrapper for passmark
 Description:
          From website:  PassMark PerformanceTest™ for Linux allows you to objectively
          benchmark a Linux system using a variety of different speed tests and compare
-         
-the results to others.
+         the results to others.
+
 Location of underlying workload: https://www.passmark.com/products/pt_linux/index.php
 
 Packages required: bc,numactl
