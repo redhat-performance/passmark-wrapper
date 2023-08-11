@@ -128,7 +128,7 @@ produce_report()
 		echo Ran > test_results_report
 
 		located=0
-		> results.csv
+		[ -f results.csv ] && rm results.csv
 		while IFS= read -r line
 		do
 			if [[ $line == *"Results Complete:"* ]]; then
