@@ -197,7 +197,7 @@ move_data_to_export()
 	mkdir $RESULTSDIR
 	mv /tmp/${test_name}.out $RESULTSDIR
 	mv test_results_report $RESULTSDIR
-	cp ${curdir}/meta_data.yml $RESULTSDIR
+	cp ${curdir}/meta_data*.yml $RESULTSDIR
 	cp passmark.summary $RESULTSDIR
 	cp results.csv $RESULTSDIR
 	cp results_all_* $RESULTSDIR
