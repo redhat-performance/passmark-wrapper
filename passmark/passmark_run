@@ -63,6 +63,9 @@ arch=`uname -m`
 
 show_usage=0
 
+# Gather hardware information
+$run_dir/test_tools/gather_data ${curdir}
+
 exit_out()
 {
 	echo $1
@@ -198,6 +201,7 @@ move_data_to_export()
 	mv /tmp/${test_name}.out $RESULTSDIR
 	mv test_results_report $RESULTSDIR
 	cp ${curdir}/meta_data.yml $RESULTSDIR
+	$run_dir/test_tools/move_data $curdir $RESULTSDIR
 	cp passmark.summary $RESULTSDIR
 	cp results.csv $RESULTSDIR
 	cp results_all_* $RESULTSDIR
