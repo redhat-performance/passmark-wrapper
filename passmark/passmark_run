@@ -22,7 +22,7 @@
 # set of default run parameters based on the system configuration.
 #
 test_name="passmark"
-
+curdir=`pwd`
 if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
         echo $command
@@ -152,6 +152,7 @@ produce_report()
 
 install_tools()
 {
+	pushd $curdir > /dev/nyll
 	#
 	# Clone the repo that contains the common code and tools
 	#
@@ -191,6 +192,7 @@ install_tools()
 	if [ $show_usage -eq 1 ]; then
 		usage $1
 	fi
+	popd > /dev/null
 }
 
 run_passmark()
