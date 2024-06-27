@@ -101,7 +101,7 @@ usage()
 	echo "$1 Usage:"
 	echo "  --cpu_add n: add n cpus each iteration until hit max cpus"
 	echo "  --powers_2: starting from 1 cpu, keep doubling the cpus until max cpus"
-	source test_tools/general_setup --usage
+	source ${curdir}/test_tools/general_setup --usage
 	exit 1
 }
 
@@ -283,7 +283,7 @@ install_tools "$@"
 # to_tuned_setting: tuned setting
 #
 
-source test_tools/general_setup "$@"
+source ${curdir}/test_tools/general_setup "$@"
 
 ARGUMENT_LIST=(
 	"cpu_add"
