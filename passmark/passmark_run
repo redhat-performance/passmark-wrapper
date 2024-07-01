@@ -152,7 +152,7 @@ produce_report()
 
 install_tools()
 {
-	pushd $curdir > /dev/nyll
+	pushd $curdir > /dev/null
 	#
 	# Clone the repo that contains the common code and tools
 	#
