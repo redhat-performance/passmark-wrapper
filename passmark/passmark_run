@@ -133,6 +133,7 @@ produce_report()
 		located=0
 		[ -f results.csv ] && rm results.csv
 		while IFS= read -r line
+		arch=`uname -m`
 		do
 			if [[ $line == *"Results Complete:"* ]]; then
 				located=1
@@ -143,6 +144,13 @@ produce_report()
 			fi
 			if [[ $line == *"SystemInformation:"* ]]; then
 				break;
+			fi
+
+			if [[ $arch == "aarch64" ]] && [[ $line == *"CPU_avx"* ]]; then
+				#
+				# Filter tests that do not run on ARM.
+				#
+				continue
 			fi
 			echo $line | sed "s/ //g" >> results.csv
 		done < "$summary_file"
