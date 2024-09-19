@@ -22,6 +22,7 @@
 # set of default run parameters based on the system configuration.
 #
 test_name="passmark"
+passmark_version="v1.0"
 curdir=`pwd`
 if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
@@ -132,6 +133,9 @@ produce_report()
 
 		located=0
 		[ -f results.csv ] && rm results.csv
+
+		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name
+
 		while IFS= read -r line
 		arch=`uname -m`
 		do
