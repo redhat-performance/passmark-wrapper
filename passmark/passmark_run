@@ -335,5 +335,15 @@ while [[ $# -gt 0 ]]; do
 	esac
 done
 
+#
+# As the passmark kit is old, it needs older libcurses libraries
+# to run on Ubuntu.
+#
+os=`$TOOLS_BIN/detect_os`
+if [[ $os == "ubuntu" ]]; then
+	add-apt-repository universe -y
+	apt-get install libncurses5 -y
+fi
+
 run_passmark
 exit 0
