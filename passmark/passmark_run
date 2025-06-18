@@ -22,6 +22,7 @@
 # set of default run parameters based on the system configuration.
 #
 test_name="passmark"
+results_file="results_${test_name}.csv"
 passmark_version="v1.0"
 curdir=`pwd`
 if [ ! -f "/tmp/${test_name}.out" ]; then
@@ -132,9 +133,9 @@ produce_report()
 		echo Ran > test_results_report
 
 		located=0
-		[ -f results.csv ] && rm results.csv
+		[ -f $results_file ] && rm $results_file
 
-		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name
+		$TOOLS_BIN/test_header_info --front_matter --results_file $results_file --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name
 
 		while IFS= read -r line
 		arch=`uname -m`
@@ -156,7 +157,7 @@ produce_report()
 				#
 				continue
 			fi
-			echo $line | sed "s/ //g" >> results.csv
+			echo $line | sed "s/ //g" >> $results_file
 		done < "$summary_file"
 	fi
 	echo Checksum: Not applicable for summary file >> $summary_file
@@ -221,10 +222,8 @@ run_passmark()
 			#
 			uname -a | grep  -q Ubuntu
 			if [ $? -eq 0 ]; then
-				echo ubuntu >> /tmp/dave
 				if [[ ! -f /usr/lib64 ]]; then
 					ln -s /usr/lib /usr/lib64
-					echo ln -s /usr/lib /usr/lib64 >> /tmp/dave
 				fi
 			fi
 		else
@@ -265,7 +264,13 @@ run_passmark()
 			mv results_all.yml results_all_${iter}.yml
 		done
 		produce_report
-		${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report"
+		$TOOLS_BIN/validate_line --results_file $results_file  --base_results_file $run_dir/base_test_results/test1/verify
+		if [[ $? -ne 0 ]]; then
+			echo Failed > test_results_report
+		else
+			echo Ran > test_results_report
+		fi
+		${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results $results_file --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report"
 		cp  results_${test_name}_${to_tuned_setting}.tar results_pbench_${test_name}_${to_tuned_setting}.tar
 		popd > /dev/null
 	else
