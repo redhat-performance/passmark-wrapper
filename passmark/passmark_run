@@ -25,6 +25,8 @@ test_name="passmark"
 results_file="results_${test_name}.csv"
 passmark_version="v1.0"
 curdir=`pwd`
+rtc=0
+
 if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
         echo $command
@@ -265,11 +267,7 @@ run_passmark()
 		done
 		produce_report
 		$TOOLS_BIN/validate_line --results_file $results_file  --base_results_file $run_dir/base_test_results/test1/verify
-		if [[ $? -ne 0 ]]; then
-			echo Failed > test_results_report
-		else
-			echo Ran > test_results_report
-		fi
+		rtc=$?
 		${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results $results_file --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report"
 		cp  results_${test_name}_${to_tuned_setting}.tar results_pbench_${test_name}_${to_tuned_setting}.tar
 		popd > /dev/null
@@ -351,4 +349,4 @@ if [[ $os == "ubuntu" ]]; then
 fi
 
 run_passmark
-exit 0
+exit $rtc
