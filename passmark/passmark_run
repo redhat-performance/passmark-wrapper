@@ -247,33 +247,25 @@ run_passmark()
 	# Iteration of test.
 	#
 
-	if [ $to_pbench -eq 0 ]; then
-		rm ${test_name}_*out
-		rm passmark.summary
-		for iter in $(seq 1 1 $to_times_to_run); do
-			if [[ $arch == "aarch64" ]]; then
-				./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
-				if [ $? -ne 0 ]; then
-					exit_out "Execution of ./pt_linux_arm64 failed" 1
-				fi
-			else
-				./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
-				if [ $? -ne 0 ]; then
-					exit_out "Execution of ./pt_linux_x64 failed" 1
-				fi
+	rm ${test_name}_*out
+	rm passmark.summary
+	for iter in $(seq 1 1 $to_times_to_run); do
+		if [[ $arch == "aarch64" ]]; then
+			./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
+			if [ $? -ne 0 ]; then
+				exit_out "Execution of ./pt_linux_arm64 failed" 1
 			fi
-			mv results_all.yml results_all_${iter}.yml
-		done
-		produce_report
-		${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report"
-		cp  results_${test_name}_${to_tuned_setting}.tar results_pbench_${test_name}_${to_tuned_setting}.tar
-		popd > /dev/null
-	else
-		source ~/.bashrc
-		cd $curdir
-		echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
-		$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
-	fi
+		else
+			./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
+			if [ $? -ne 0 ]; then
+				exit_out "Execution of ./pt_linux_x64 failed" 1
+			fi
+		fi
+		mv results_all.yml results_all_${iter}.yml
+	done
+	produce_report
+	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report"
+	popd > /dev/null
 }
 
 install_tools "$@"
@@ -285,10 +277,6 @@ install_tools "$@"
 # to_home_root: home directory
 # to_configuration: configuration information
 # to_times_to_run: number of times to run the test
-# to_pbench: Run the test via pbench
-# to_pbench_copy: Copy the data to the pbench repository, not move_it.
-# to_puser: User running pbench
-# to_run_label: Label for the run
 # to_user: User on the test system running the test
 # to_sys_type: for results info, basically aws, azure or local
 # to_sysname: name of the system
