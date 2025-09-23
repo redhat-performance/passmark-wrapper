@@ -157,11 +157,6 @@ produce_report()
 				continue
 			fi
 			echo $line | sed "s/ //g" >> results.csv
-			if [[ $to_use_pcp -eq 1 ]]; then
-				test=$(echo $line | cut -d: -f1)
-				result=$(echo $line | cut -d: -f2)
-				result2pcp passmark_${test} ${result}
-			fi
 		done < "$summary_file"
 	fi
 	echo Checksum: Not applicable for summary file >> $summary_file
@@ -277,13 +272,14 @@ run_passmark()
 			fi
 		fi
 		mv results_all.yml results_all_${iter}.yml		
+		if [[ $to_use_pcp -eq 1 ]]; then
+			result2pcp iteration $iter
+			stop_pcp_subset
+		fi
 	done
 
 	produce_report
 
-	if [[ $to_use_pcp -eq 1 ]]; then
-		stop_pcp_subset
-	fi
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report,$pcp_dir"
 	popd > /dev/null
 }
