@@ -256,10 +256,12 @@ run_passmark()
 		pcp_cfg=$TOOLS_BIN/pcp/default.cfg
 		pcp_dir=/tmp/pcp_passmark_$(date +%Y.%m.%d-%H.%M.%S)
 		start_pcp $pcp_dir passmark $pcp_cfg
-		start_pcp_subset
 	fi
 	
 	for iter in $(seq 1 1 $to_times_to_run); do		
+		if [[ $to_use_pcp -eq 1 ]];then
+			start_pcp_subset
+		fi
 		if [[ $arch == "aarch64" ]]; then
 			./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
 			if [ $? -ne 0 ]; then
@@ -279,6 +281,9 @@ run_passmark()
 	done
 
 	produce_report
+	if [[ $to_use_pcp -eq 1 ]]; then
+		stop_pcp
+	fi
 
 	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report,$pcp_dir"
 	popd > /dev/null
