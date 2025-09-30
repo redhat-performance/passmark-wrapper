@@ -71,6 +71,12 @@ $curdir/test_tools/gather_data ${curdir}
 
 exit_out()
 {
+	if [[ $to_use_pcp -eq 1 ]]; then
+		stop_pcp_subset
+		stop_pcp
+		shutdown_pcp
+	fi
+
 	echo $1
 	exit $2
 }
