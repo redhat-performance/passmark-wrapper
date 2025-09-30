@@ -298,7 +298,7 @@ run_passmark()
 		copy_dirs="--copy_dir $copy_dirs"
 	fi
 
-	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report,$pcp_dir" $copy_dirs
+	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report" $copy_dirs
 	popd > /dev/null
 }
 
