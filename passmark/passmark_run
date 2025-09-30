@@ -24,6 +24,8 @@
 test_name="passmark"
 passmark_version="v1.0"
 curdir=`pwd`
+copy_dirs=""
+
 if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
         echo $command
@@ -69,6 +71,12 @@ $curdir/test_tools/gather_data ${curdir}
 
 exit_out()
 {
+	if [[ $to_use_pcp -eq 1 ]]; then
+		stop_pcp_subset
+		stop_pcp
+		shutdown_pcp
+	fi
+
 	echo $1
 	exit $2
 }
@@ -247,33 +255,51 @@ run_passmark()
 	# Iteration of test.
 	#
 
-	if [ $to_pbench -eq 0 ]; then
-		rm ${test_name}_*out
-		rm passmark.summary
-		for iter in $(seq 1 1 $to_times_to_run); do
-			if [[ $arch == "aarch64" ]]; then
-				./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
-				if [ $? -ne 0 ]; then
-					exit_out "Execution of ./pt_linux_arm64 failed" 1
-				fi
-			else
-				./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
-				if [ $? -ne 0 ]; then
-					exit_out "Execution of ./pt_linux_x64 failed" 1
-				fi
-			fi
-			mv results_all.yml results_all_${iter}.yml
-		done
-		produce_report
-		${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report"
-		cp  results_${test_name}_${to_tuned_setting}.tar results_pbench_${test_name}_${to_tuned_setting}.tar
-		popd > /dev/null
-	else
-		source ~/.bashrc
-		cd $curdir
-		echo $TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
-		$TOOLS_BIN/execute_via_pbench --cmd_executing "$0" $arguments --test ${test_name} --spacing 11 --pbench_stats $to_pstats
+	rm ${test_name}_*out
+	rm passmark.summary
+
+	if [[ $to_use_pcp -eq 1 ]]; then
+		source $TOOLS_BIN/pcp/pcp_commands.inc
+		setup_pcp
+		pcp_cfg=$TOOLS_BIN/pcp/default.cfg
+		pcp_dir=/tmp/pcp_passmark_$(date +%Y.%m.%d-%H.%M.%S)
+		start_pcp $pcp_dir passmark $pcp_cfg
+		copy_dirs="$pcp_dir"
 	fi
+	
+	for iter in $(seq 1 1 $to_times_to_run); do		
+		if [[ $to_use_pcp -eq 1 ]];then
+			start_pcp_subset
+		fi
+		if [[ $arch == "aarch64" ]]; then
+			./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
+			if [ $? -ne 0 ]; then
+				exit_out "Execution of ./pt_linux_arm64 failed" 1
+			fi
+		else
+			./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
+			if [ $? -ne 0 ]; then
+				exit_out "Execution of ./pt_linux_x64 failed" 1
+			fi
+		fi
+		mv results_all.yml results_all_${iter}.yml		
+		if [[ $to_use_pcp -eq 1 ]]; then
+			result2pcp iteration $iter
+			stop_pcp_subset
+		fi
+	done
+
+	produce_report
+	if [[ $to_use_pcp -eq 1 ]]; then
+		stop_pcp
+	fi
+
+	if [[ -n "$copy_dirs" ]]; then
+		copy_dirs="--copy_dir $copy_dirs"
+	fi
+
+	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report" $copy_dirs
+	popd > /dev/null
 }
 
 install_tools "$@"
@@ -285,10 +311,6 @@ install_tools "$@"
 # to_home_root: home directory
 # to_configuration: configuration information
 # to_times_to_run: number of times to run the test
-# to_pbench: Run the test via pbench
-# to_pbench_copy: Copy the data to the pbench repository, not move_it.
-# to_puser: User running pbench
-# to_run_label: Label for the run
 # to_user: User on the test system running the test
 # to_sys_type: for results info, basically aws, azure or local
 # to_sysname: name of the system
