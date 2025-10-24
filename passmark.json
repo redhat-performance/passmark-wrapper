@@ -1,0 +1,37 @@
+{
+    "dependenices": {
+        "rhel": [
+            "bc",
+            "numactl",
+            "perf",
+            "git",
+            "zip",
+            "unzip"
+        ],
+        "ubuntu": [
+            "bc",
+            "numactl",
+            "git",
+            "zip",
+            "unzip",
+            "libncurses5"
+        ],
+        "amzn": [
+            "bc",
+            "numactl",
+            "perf",
+            "git",
+            "zip",
+            "unzip"
+        ],
+        "sles": [
+            "bc",
+            "libnuma1",
+            "perf",
+            "git",
+            "zip",
+            "unzip",
+            "libncurses5"
+        ]
+    }
+}
