@@ -24,6 +24,7 @@
 test_name="passmark"
 passmark_version="v1.0"
 curdir=`pwd`
+script_dir=$(dirname $(realpath $0))
 copy_dirs=""
 
 if [ ! -f "/tmp/${test_name}.out" ]; then
@@ -364,8 +365,11 @@ done
 os=`$TOOLS_BIN/detect_os`
 if [[ $os == "ubuntu" ]]; then
 	add-apt-repository universe -y
-	apt-get install libncurses5 -y
+elif [[ $os == "sles" ]]; then
+	SUSEConnect --product sle-module-legacy/$($TOOLS_BIN/detect_os --os-version)/$(arch)
 fi
+
+$TOOLS_BIN/package_tool --no_packages $to_no_pkg_install --wrapper_config $script_dir/../passmark.json
 
 run_passmark
 exit 0
