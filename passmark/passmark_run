@@ -27,7 +27,6 @@ curdir=`pwd`
 script_dir=$(dirname $(realpath $0))
 copy_dirs=""
 
-
 if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
         echo $command
