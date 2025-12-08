@@ -146,7 +146,6 @@ produce_report()
 		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name
 
 		while IFS= read -r line
-		arch=`uname -m`
 		do
 			if [[ $line == *"Results Complete:"* ]]; then
 				located=1
