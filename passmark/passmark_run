@@ -146,7 +146,6 @@ produce_report()
 		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name
 
 		while IFS= read -r line
-		arch=`uname -m`
 		do
 			if [[ $line == *"Results Complete:"* ]]; then
 				located=1
@@ -230,10 +229,8 @@ run_passmark()
 			#
 			uname -a | grep  -q Ubuntu
 			if [ $? -eq 0 ]; then
-				echo ubuntu >> /tmp/dave
 				if [[ ! -f /usr/lib64 ]]; then
 					ln -s /usr/lib /usr/lib64
-					echo ln -s /usr/lib /usr/lib64 >> /tmp/dave
 				fi
 			fi
 		else
@@ -246,7 +243,32 @@ run_passmark()
 
 	if [ ! -f "/usr/lib64/libncurses.so.5" ]; then
 		pushd /usr/lib64 > /dev/null
-		ln -s libncurses.so.6 libncurses.so.5
+		lib=`find . -print | grep libncurses.so.6`
+		if [[ $? -ne 0 ]]; then
+			popd > /dev/null
+			#
+			# Now try /usr/lib
+			#
+			pushd /usr/lib > /dev/null
+			lib=`find . -print | grep  'libncurses.so.6$'`
+			if [[ $? -ne 0 ]]; then
+				#
+				# Give up.
+				#
+				exit_out "/usr/lib64/libncurses.so.6 not present" 1
+			fi
+			if [[ -f "libncurses.so.6" ]]; then
+				ln -s libncurses.so.6 libncurses.so.5
+			else
+				lib=`find . -print | grep  'libncurses.so.6$'`
+				if [[ $? -ne 0 ]]; then
+					exit_out "libncurses.so.6 not present" 1
+				fi
+			fi
+			dir=`echo $lib | rev | cut -d'/' -f2- | rev`
+			cd $dir
+			ln -s libncurses.so.6 libncurses.so.5
+		fi
 		popd > /dev/null
 	fi
 
