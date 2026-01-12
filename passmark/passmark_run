@@ -310,8 +310,17 @@ run_passmark()
 			result2pcp iteration $iter
 			while IFS= read -r metric
 			do
-				value=`grep $metric results_all_${iter}.yml | cut -d':' -f2`
-				result2pcp $metric $value
+				field=`echo $metric | awk '{print $1}'`
+				grep -q ^${field} results_all_${iter}.yml
+				#
+				# Only if the metric exists
+				#
+				if [[ $? -eq 0 ]]; then
+					value=`grep ^$field results_all_${iter}.yml | cut -d':' -f2`
+					result2pcp $field $value
+				#
+				# If the 
+				fi
 			done < "${run_dir}/openmetrics_passmark_reset.txt"
 			stop_pcp_subset
 		fi
