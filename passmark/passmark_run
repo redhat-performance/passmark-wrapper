@@ -308,6 +308,11 @@ run_passmark()
 		mv results_all.yml results_all_${iter}.yml		
 		if [[ $to_use_pcp -eq 1 ]]; then
 			result2pcp iteration $iter
+			while IFS= read -r metric
+			do
+				value=`grep $metric results_all_${iter}.yml | cut -d':' -f2`
+				result2pcp $metric $value
+			done < "${run_dir}/openmetrics_passmark_reset.txt"
 			stop_pcp_subset
 		fi
 	done
