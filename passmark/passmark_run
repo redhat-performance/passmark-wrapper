@@ -89,9 +89,9 @@ summary_file="passmark.summary"
 rm $summary_file
 pull_data()
 {
+	ltest_name="$1"
 	passmark_file=`mktemp /tmp/passmark_data.XXXXX`
-	test_name=${1}
-	grep "^${test_name}" results_all_*yml | cut -d':' -f2 | sed "s/ //g" > ${passmark_file}
+	grep "^${ltest_name}" results_all_*yml | cut -d':' -f2 | sed "s/ //g" > ${passmark_file}
 	results=0.0
 	iterations=0
 	while IFS= read -r line
@@ -102,7 +102,7 @@ pull_data()
 	done < "${passmark_file}"
 	rm ${passmark_file}
 	value=`echo "scaling=12;${results}/${iterations}" | bc -l`
-	output=`printf "  %s:%-40.12f" $test_name $value | sed "s/ //g" | sed "s/:/: /g"`
+	output=`printf "  %s:%-40.12f" $ltest_name $value | sed "s/ //g" | sed "s/:/: /g"`
 	echo "${output}"
 }
 
@@ -117,6 +117,8 @@ usage()
 
 produce_report()
 {
+	start_time="${1}"
+	end_time="${2}"
 	found=0
 
 	if [[ ! -f  results_all_1.yml ]]; then
@@ -126,8 +128,8 @@ produce_report()
 		do
 			if [[ $found -eq 1 ]]; then
 				if [[ ${line} != "SystemInformation:"* ]]; then
-					test_name=`echo $line | awk '{print $1}'`
-					pull_data $test_name
+					ltest_name=`echo $line | awk '{print $1}'`
+					pull_data $ltest_name
 					continue
 				else
 					found=0
@@ -143,11 +145,11 @@ produce_report()
 		located=0
 		[ -f results.csv ] && rm results.csv
 
-		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name
+		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name --field_header "Testname,Operations"
 
 		while IFS= read -r line
 		do
-			if [[ $line == *"Results Complete:"* ]]; then
+			if [[ $line == *"NumTestProcesses:"* ]]; then
 				located=1
 				continue
 			fi
@@ -164,7 +166,10 @@ produce_report()
 				#
 				continue
 			fi
-			echo $line | sed "s/ //g" >> results.csv
+			ltest_name=`echo $line | cut -d':' -f1`
+			results=`echo $line | cut -d' ' -f2`
+			data_string=$(build_data_string "${ltest_name}" "${results}" "${start_time}" "${end_time}")
+			echo "${data_string}" >> results.csv
 		done < "$summary_file"
 	fi
 	echo Checksum: Not applicable for summary file >> $summary_file
@@ -282,7 +287,6 @@ run_passmark()
 	rm passmark.summary
 
 	if [[ $to_use_pcp -eq 1 ]]; then
-		source $TOOLS_BIN/pcp/pcp_commands.inc
 		setup_pcp
 		pcp_cfg=$TOOLS_BIN/pcp/default.cfg
 		pcp_dir=/tmp/pcp_passmark_$(date +%Y.%m.%d-%H.%M.%S)
@@ -294,6 +298,7 @@ run_passmark()
 		if [[ $to_use_pcp -eq 1 ]];then
 			start_pcp_subset
 		fi
+		start_time=$(retrieve_time_stamp)
 		if [[ $arch == "aarch64" ]]; then
 			./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
 			if [ $? -ne 0 ]; then
@@ -305,28 +310,33 @@ run_passmark()
 				exit_out "Execution of ./pt_linux_x64 failed" 1
 			fi
 		fi
+		end_time=$(retrieve_time_stamp)
 		mv results_all.yml results_all_${iter}.yml		
 		if [[ $to_use_pcp -eq 1 ]]; then
-			result2pcp iteration $iter
+			results2pcp_add_value "iteration:$iter"
 			while IFS= read -r metric
 			do
 				field=`echo $metric | awk '{print $1}'`
-				grep -q ^${field} results_all_${iter}.yml
+				grep -q "^  ${field}:" results_all_${iter}.yml
 				#
 				# Only if the metric exists
 				#
 				if [[ $? -eq 0 ]]; then
-					value=`grep ^$field results_all_${iter}.yml | cut -d':' -f2`
-					result2pcp $field $value
-				#
-				# If the 
+					value=`grep "^  ${field}:" results_all_${iter}.yml | awk '{print $2}'`
+					results2pcp_add_value "$field:$value"
 				fi
 			done < "${run_dir}/openmetrics_passmark_reset.txt"
+			results2pcp_add_value_commit
+			#
+			# Now zero everything but the iteration
+			#
+			reset_pcp_om
+			results2pcp_multiple "iteration:$iter"
 			stop_pcp_subset
 		fi
 	done
 
-	produce_report
+	produce_report "${start_time}" "${end_time}"
 	if [[ $to_use_pcp -eq 1 ]]; then
 		stop_pcp
 	fi
@@ -355,6 +365,9 @@ install_tools "$@"
 #
 
 source ${curdir}/test_tools/general_setup "$@"
+if [[ $to_use_pcp -eq 1 ]]; then
+	source $TOOLS_BIN/pcp/pcp_commands.inc
+fi
 
 ARGUMENT_LIST=(
 	"cpu_add"
