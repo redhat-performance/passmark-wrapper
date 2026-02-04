@@ -21,11 +21,13 @@
 # This script automates the execution of coremark.  It will determine the
 # set of default run parameters based on the system configuration.
 #
+script_dir=$(realpath $(dirname $0))
 test_name="passmark"
 passmark_version="v1.0"
 curdir=`pwd`
 script_dir=$(dirname $(realpath $0))
 copy_dirs=""
+rtc=0
 
 if [ ! -f "/tmp/${test_name}.out" ]; then
         command="${0} $@"
@@ -67,8 +69,6 @@ arch=`uname -m`
 
 show_usage=0
 
-# Gather hardware information
-$curdir/test_tools/gather_data ${curdir}
 
 exit_out()
 {
@@ -111,7 +111,7 @@ usage()
 	echo "$1 Usage:"
 	echo "  --cpu_add n: add n cpus each iteration until hit max cpus"
 	echo "  --powers_2: starting from 1 cpu, keep doubling the cpus until max cpus"
-	source ${curdir}/test_tools/general_setup --usage
+	source ${TOOLS_BIN}/general_setup --usage
 	exit 1
 }
 
@@ -143,9 +143,9 @@ produce_report()
 		echo Ran > test_results_report
 
 		located=0
-		[ -f results.csv ] && rm results.csv
+		[ -f results_passmark.csv ] && rm results_passmark.csv
 
-		$TOOLS_BIN/test_header_info --front_matter --results_file results.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name --field_header "Testname,Operations"
+		$TOOLS_BIN/test_header_info --front_matter --results_file results_passmark.csv --host $to_configuration --sys_type $to_sys_type --tuned $to_tuned_setting --results_version $passmark_version --test_name $test_name --field_header "Testname,Operations"
 
 		while IFS= read -r line
 		do
@@ -169,7 +169,7 @@ produce_report()
 			ltest_name=`echo $line | cut -d':' -f1`
 			results=`echo $line | cut -d' ' -f2`
 			data_string=$(build_data_string "${ltest_name}" "${results}" "${start_time}" "${end_time}")
-			echo "${data_string}" >> results.csv
+			echo "${data_string}" >> results_passmark.csv
 		done < "$summary_file"
 	fi
 	echo Checksum: Not applicable for summary file >> $summary_file
@@ -207,12 +207,14 @@ install_tools()
 	# Check to see if the test tools directory exists.  If it does, we do not need to
 	# clone the repo.
 	#
-	if [ ! -d "test_tools" ]; then
-		git clone $tools_git test_tools
+	if [ ! -d "${HOME}/test_tools" ]; then
+		git clone $tools_git ${HOME}/test_tools
 		if [ $? -ne 0 ]; then
 			exit_out "pulling git $tools_git failed." 1
 		fi
 	fi
+	TOOLS_BIN=${HOME}/test_tools
+	export TOOLS_BIN
 
 	if [ $show_usage -eq 1 ]; then
 		usage $1
@@ -344,12 +346,15 @@ run_passmark()
 	if [[ -n "$copy_dirs" ]]; then
 		copy_dirs="--copy_dir $copy_dirs"
 	fi
-
-	${curdir}/test_tools/save_results --curdir $curdir --home_root $to_home_root --results results.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report" $copy_dirs
+	${TOOLS_BIN}/csv_to_json $to_json_flags --csv_file results_passmark.csv --output_file results_passmark.json
+	${TOOLS_BIN}/verify_results $to_verify_flags --schema_file $script_dir/results_schema.py --class_name Passmark_Results --file results_passmark.json
+	rtc=$?
+	${TOOLS_BIN}/save_results --curdir $curdir --home_root $to_home_root --results results_passmark.csv --test_name $test_name --tuned_setting=$to_tuned_setting --version NONE --user $to_user  --other_files "passmark.summary,results_all_*,${test_name}_${iter}.out,test_results_report" $copy_dirs
 	popd > /dev/null
 }
 
 install_tools "$@"
+$TOOLS_BIN/gather_data ${curdir}
 
 #
 # Variables set by general setup.
@@ -364,7 +369,7 @@ install_tools "$@"
 # to_tuned_setting: tuned setting
 #
 
-source ${curdir}/test_tools/general_setup "$@"
+source ${TOOLS_BIN}/general_setup "$@"
 if [[ $to_use_pcp -eq 1 ]]; then
 	source $TOOLS_BIN/pcp/pcp_commands.inc
 fi
@@ -427,4 +432,4 @@ fi
 $TOOLS_BIN/package_tool --no_packages $to_no_pkg_install --wrapper_config $script_dir/../passmark.json
 
 run_passmark
-exit 0
+exit $rtc
