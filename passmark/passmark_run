@@ -25,7 +25,6 @@ script_dir=$(realpath $(dirname $0))
 test_name="passmark"
 passmark_version="v1.0"
 curdir=`pwd`
-script_dir=$(dirname $(realpath $0))
 copy_dirs=""
 rtc=0
 
