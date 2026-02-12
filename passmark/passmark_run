@@ -226,7 +226,7 @@ run_passmark()
 	pushd $curdir > /dev/null
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
-			unzip /uploads/pt_linux_arm64.zip
+			unzip /$to_home_root/$to_user/uploads/pt_linux_arm64.zip
 			if [ $? -ne 0 ]; then
 				exit_out "pt_linux_arm64.zip failed" 1
 			fi
@@ -240,7 +240,7 @@ run_passmark()
 				fi
 			fi
 		else
-			unzip /uploads/pt_linux_x64.zip
+			unzip /$to_home_root/$to_user/uploads/pt_linux_x64.zip
 			if [ $? -ne 0 ]; then
 				exit_out "pt_linux_x64.zip failed" 1
 			fi
