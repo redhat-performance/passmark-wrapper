@@ -226,7 +226,7 @@ run_passmark()
 	pushd $curdir > /dev/null
 	if [ ! -d "PerformanceTest" ]; then
 		if [[ $arch == "aarch64" ]]; then
-			unzip /uploads/pt_linux_arm64.zip
+			unzip /$to_home_root/$to_user/uploads/pt_linux_arm64.zip
 			if [ $? -ne 0 ]; then
 				exit_out "pt_linux_arm64.zip failed" 1
 			fi
@@ -240,7 +240,7 @@ run_passmark()
 				fi
 			fi
 		else
-			unzip /uploads/pt_linux_x64.zip
+			unzip /$to_home_root/$to_user/uploads/pt_linux_x64.zip
 			if [ $? -ne 0 ]; then
 				exit_out "pt_linux_x64.zip failed" 1
 			fi
@@ -249,7 +249,7 @@ run_passmark()
 
 	if [ ! -f "/usr/lib64/libncurses.so.5" ]; then
 		pushd /usr/lib64 > /dev/null
-		lib=`find . -print | grep libncurses.so.6`
+		lib=`find . -print | grep libncurses.so.6$`
 		if [[ $? -ne 0 ]]; then
 			popd > /dev/null
 			#
@@ -271,10 +271,10 @@ run_passmark()
 					exit_out "libncurses.so.6 not present" 1
 				fi
 			fi
-			dir=`echo $lib | rev | cut -d'/' -f2- | rev`
-			cd $dir
-			ln -s libncurses.so.6 libncurses.so.5
 		fi
+		dir=`echo $lib | rev | cut -d'/' -f2- | rev`
+		cd $dir
+		ln -s libncurses.so.6 libncurses.so.5
 		popd > /dev/null
 	fi
 
