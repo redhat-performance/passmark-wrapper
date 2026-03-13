@@ -111,7 +111,7 @@ usage()
 	echo "  --cpu_add n: add n cpus each iteration until hit max cpus"
 	echo "  --powers_2: starting from 1 cpu, keep doubling the cpus until max cpus"
 	source ${TOOLS_BIN}/general_setup --usage
-	exit 1
+	exit $E_USAGE
 }
 
 produce_report()
@@ -203,7 +203,7 @@ attempt_tools_git()
         if [[ ! -d "$TOOLS_BIN" ]]; then
                 git clone $tools_git "$TOOLS_BIN"
                 if [ $? -ne 0 ]; then
-                        exit_out "Error: pulling git $tools_git failed." 1
+                        exit_out "Error: pulling git $tools_git failed." 101
                 fi
         fi
 }
@@ -260,7 +260,7 @@ run_passmark()
 		if [[ $arch == "aarch64" ]]; then
 			unzip /$to_home_root/$to_user/uploads/pt_linux_arm64.zip
 			if [ $? -ne 0 ]; then
-				exit_out "pt_linux_arm64.zip failed" 1
+				exit_out "pt_linux_arm64.zip failed" $E_GENERAL
 			fi
 			#
 			# Ubuntu check
@@ -274,7 +274,7 @@ run_passmark()
 		else
 			unzip /$to_home_root/$to_user/uploads/pt_linux_x64.zip
 			if [ $? -ne 0 ]; then
-				exit_out "pt_linux_x64.zip failed" 1
+				exit_out "pt_linux_x64.zip failed" $E_GENERAL
 			fi
 		fi
 	fi
@@ -293,14 +293,14 @@ run_passmark()
 				#
 				# Give up.
 				#
-				exit_out "/usr/lib64/libncurses.so.6 not present" 1
+				exit_out "/usr/lib64/libncurses.so.6 not present" $E_GENERAL
 			fi
 			if [[ -f "libncurses.so.6" ]]; then
 				ln -s libncurses.so.6 libncurses.so.5
 			else
 				lib=`find . -print | grep  'libncurses.so.6$'`
 				if [[ $? -ne 0 ]]; then
-					exit_out "libncurses.so.6 not present" 1
+					exit_out "libncurses.so.6 not present" $E_GENERAL
 				fi
 			fi
 		fi
@@ -335,12 +335,12 @@ run_passmark()
 		if [[ $arch == "aarch64" ]]; then
 			./pt_linux_arm64 -r 3 >> ${test_name}_${iter}.out
 			if [ $? -ne 0 ]; then
-				exit_out "Execution of ./pt_linux_arm64 failed" 1
+				exit_out "Execution of ./pt_linux_arm64 failed" $E_GENERAL
 			fi
 		else
 			./pt_linux_x64 -r 3 >> ${test_name}_${iter}.out
 			if [ $? -ne 0 ]; then
-				exit_out "Execution of ./pt_linux_x64 failed" 1
+				exit_out "Execution of ./pt_linux_x64 failed" $E_GENERAL
 			fi
 		fi
 		end_time=$(retrieve_time_stamp)
