@@ -428,7 +428,7 @@ elif [[ $os == "sles" ]]; then
 	SUSEConnect --product sle-module-legacy/$($TOOLS_BIN/detect_os --os-version)/$(arch)
 fi
 
-$TOOLS_BIN/package_tool --no_packages $to_no_pkg_install --wrapper_config $script_dir/../passmark.json
+package_tool --no_packages $to_no_pkg_install --wrapper_config $script_dir/../passmark.json
 
 run_passmark
 exit $rtc
