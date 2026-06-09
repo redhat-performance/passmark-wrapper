@@ -33,6 +33,6 @@ class testname(Enum):
 
 class Passmark_Results(pydantic.BaseModel):
     Testname: testname
-    Operations: float = pydantic.Field(gt=0, allow_inf_nan=False)
+    Operations: float = pydantic.Field(ge=0, allow_inf_nan=False)
     Start_Date: datetime.datetime
     End_Date: datetime.datetime
