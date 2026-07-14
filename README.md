@@ -219,7 +219,7 @@ Exit codes indicate specific failure points for automated testing workflows.
 ## Notes
 
 ### PassMark Binary
-The PassMark PerformanceTest Linux binary is not included in this wrapper. It must be pre-installed on the target system before running the script. See the [PassMark website](https://www.passmark.com/products/pt_linux/index.php) for licensing and download.
+The PassMark PerformanceTest Linux binary is not included in this wrapper. The appropriate ZIP file (`pt_linux_x64.zip` or `pt_linux_arm64.zip`) must be placed in `~/uploads/` on the target system before running the script. See the [PassMark website](https://www.passmark.com/products/pt_linux/index.php) for licensing and download.
 
 ### Architecture Support
 - **x86_64**: Full support for AMD and Intel CPUs. Runs all test categories including AVX and AVX-512.
