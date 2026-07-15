@@ -210,9 +210,8 @@ Runs 5 iterations with PCP monitoring on an AWS system.
 
 The script uses standardized error codes from test_tools error_codes:
 - **0**: Success.
-- **101**: Git clone failure (pulling test_tools-wrappers).
-- **E_GENERAL**: General execution errors (ZIP extraction failures, missing libncurses libraries, binary execution failures).
-- **E_USAGE**: Invalid usage/arguments.
+- **101 (E_GENERAL)**: General execution errors (git clone failure, ZIP extraction failures, missing libncurses libraries, binary execution failures).
+- **103 (E_USAGE)**: Invalid usage/arguments.
 
 Exit codes indicate specific failure points for automated testing workflows.
 
